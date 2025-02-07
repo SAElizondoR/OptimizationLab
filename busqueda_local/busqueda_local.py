@@ -1,4 +1,6 @@
 import numpy as np
+import argparse
+import time
 
 def cargar_datos(ruta_archivo):
     """Cargar los datos del problema desde un archivo CSV.
@@ -244,29 +246,72 @@ def resolver_mochila(datos, capacidad_maxima, max_repeticiones=100,
         'mejora_obtenida': beneficio_actual - beneficio_inicial
     }
 
+def main():
+    # Configurar el analizador sintáctico
+    parser = argparse.ArgumentParser(description='Problema de la mochila con búsqueda local')
+    parser.add_argument('-f', '--archivo', type=str, required=True,
+                        help='Ruta al archivo CSV con los datos')
+    parser.add_argument('-c', '--capacidad', type=int, required=True,
+                        help='Capacidad máxima de la mochila')
+    parser.add_argument('-r', '--repeticiones', type=int, default=100,
+                        help='Número máximo de repeticiones (default: 100)')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Mostrar detalles durante la ejecución')
+    
+    args = parser.parse_args()
+
+    # Validación de la entrada
+    if args.capacidad <= 0:
+        raise ValueError("La capacidad debe ser un número positivo")
+    
+    try:
+        # Medición del tiempo total
+        inicio = time.perf_counter()
+
+        # Cargar los datos
+        dataset = cargar_datos(args.archivo)
+        inicio_ejecucion = time.perf_counter()
+        tiempo_carga = inicio_ejecucion - inicio
+
+        # Resolver el problema
+        solucion = resolver_mochila(
+            datos=dataset,
+            capacidad_maxima=args.capacidad,
+            max_repeticiones=args.repeticiones,
+            verbose=args.verbose
+        )
+        tiempo_ejecucion = time.perf_counter() - inicio_ejecucion
+
+        # Tiempo total
+        tiempo_total = tiempo_carga + tiempo_ejecucion
+
+        # Mostrar resultados
+        print("\n" + "="*50)
+        print("Resultados de la ejecución".center(50))
+        print("="*50)
+        print(f"Archivo procesado: {args.archivo}")
+        print(f"Capacidad configurada: {args.capacidad}")
+        print(f"\nArtículos seleccionados: {len(solucion['articulos_seleccionados'])}")
+        print(f"Peso total: {solucion['peso_total']}/{args.capacidad}")
+        print(f"Beneficio total: {solucion['beneficio_total']}")
+        print(f"Mejora obtenida: {solucion['mejora_obtenida']}")
+        print(f"Repeticiones realizadas: {solucion['repeticiones_realizadas']}")
+
+        print("\n" + "-"*50)
+        print("Tiempos de ejecución:".center(50))
+        print("-"*50)
+        print(f"Carga de datos: {tiempo_carga:.4f} segundos")
+        print(f"Algoritmo mochila: {tiempo_ejecucion:.4f} segundos")
+        print(f"TOTAL: {tiempo_total:.4f} segundos")
+        print("="*50)
+    
+    except FileNotFoundError:
+        print(f"Error: El archivo {args.archivo} no existe")
+    except Exception as e:
+        print(f"Error inesperado: {str(e)}")
+
 # ----------------------------
 # Ejemplo de uso
 # ----------------------------
 if __name__ == "__main__":
-    # Configuración de prueba
-    ARCHIVO_DATOS = "datos_dificil.csv"
-    CAPACIDAD_MOCHILA = 1000000
-
-    # Cargar datos y resolver
-    dataset = cargar_datos(ARCHIVO_DATOS)
-    solucion = resolver_mochila(
-        datos=dataset,
-        capacidad_maxima=CAPACIDAD_MOCHILA,
-        max_repeticiones=100,
-        verbose=True
-    )
-
-    # Mostrar resultados
-    print("\n--- Resultado Final ---")
-    print("Artículos seleccionados: "
-          f"{len(solucion['articulos_seleccionados'])}")
-    print(f"Peso total: {solucion['peso_total']}/{CAPACIDAD_MOCHILA}")
-    print(f"Beneficio total: {solucion['beneficio_total']}")
-    print(f"Mejora obtenida: {solucion['mejora_obtenida']}")
-    print("Número de repeticiones realizadas: "
-          f"{solucion['repeticiones_realizadas']}")
+    main()
