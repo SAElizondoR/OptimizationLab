@@ -1,6 +1,6 @@
-import numpy as np
-import argparse
 import time
+import argparse
+import numpy as np
 from algoritmos import (resolver_problema_voraz, resolver_problema_grasp,
                         resolver_problema_tabu)
 
@@ -45,7 +45,7 @@ def main():
                         help='Usar algoritmo de búsqueda tabú')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Mostrar detalles durante la ejecución')
-    
+
     args = parser.parse_args()
 
     # Validación de la entrada
@@ -53,7 +53,7 @@ def main():
         raise ValueError("La capacidad debe ser un número positivo")
     if args.grasp and (args.alpha < 0 or args.alpha > 1):
         raise ValueError("El parámetro alpha debe estar entre 0 y 1")
-    
+
     try:
         # Medición del tiempo total
         inicio = time.perf_counter()
@@ -85,12 +85,12 @@ def main():
         else:
             print("\nUsando enfoque voraz + búsqueda local")
             solucion = resolver_problema_voraz(
-                datos=dataset,
-                capacidad=args.capacidad,
+                articulos=dataset,
+                capacidad_mochila=args.capacidad,
                 max_repeticiones=args.repeticiones,
                 verbose=args.verbose
             )
-        
+
         tiempo_ejecucion = time.perf_counter() - inicio_ejecucion
 
         # Tiempo total
@@ -107,7 +107,7 @@ def main():
         print(f"Peso total: {solucion['peso_total']}/{args.capacidad}")
         print(f"Beneficio total: {solucion['beneficio_total']}")
         print(f"Mejora obtenida: {solucion['mejora_obtenida']}")
-        print(f"Repeticiones realizadas: {solucion['repeticiones_realizadas']}")
+        # print(f"Repeticiones realizadas: {solucion['repeticiones_realizadas']}")
 
         print("\n" + "-"*50)
         print("Tiempos de ejecución:".center(50))
@@ -116,7 +116,7 @@ def main():
         print(f"Algoritmo mochila: {tiempo_ejecucion:.4f} segundos")
         print(f"TOTAL: {tiempo_total:.4f} segundos")
         print("="*50)
-    
+
     except FileNotFoundError:
         print(f"Error: El archivo {args.archivo} no existe")
     except Exception as e:

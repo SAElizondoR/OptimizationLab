@@ -5,15 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Mochila (voraz + búsqueda local)",
+            "name": "Python: Mochila (búsqueda tabú)",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "--archivo", "C:\\Users\\seelro06\\OneDrive - Arca Continental S.A.B. de C.V\\Documentos\\uni\\OptimizationLab\\busqueda_local\\data\\datos_dificil.csv",
+                "--archivo", "/home/andres/Documentos/univ/maestria/4to/OptimizationLab/busqueda_local/data/datos_dificil.csv",
                 "--capacidad", "1000000",
-                "--repeticiones", "500",
+                "--repeticiones", "5",
+                "--tabu",
                 "--verbose"
             ]
         },
@@ -24,11 +25,24 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "--archivo", "C:\\Users\\seelro06\\OneDrive - Arca Continental S.A.B. de C.V\\Documentos\\uni\\OptimizationLab\\busqueda_local\\data\\datos_dificil.csv",
+                "--archivo", "/home/andres/Documentos/univ/maestria/4to/OptimizationLab/busqueda_local/data/datos_dificil.csv",
                 "--capacidad", "1000000",
                 "--repeticiones", "100",
                 "--alpha", "0.3",
                 "--grasp",
+                "--verbose"
+            ]
+        },
+        {
+            "name": "Python: Mochila (voraz + búsqueda local)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--archivo", "/home/andres/Documentos/univ/maestria/4to/OptimizationLab/busqueda_local/data/datos_dificil.csv",
+                "--capacidad", "1000000",
+                "--repeticiones", "500",
                 "--verbose"
             ]
         }
