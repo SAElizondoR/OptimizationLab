@@ -423,7 +423,7 @@ def resolver_problema_tabu(
                         if mejora > best_mejora:
                             best_mejora = mejora
                             best_move = move
-                            best_peso = nuevos_pesos[feasible_j == j][0]
+                            best_peso = nuevos_pesos[mascara_factibles][feasible_j == j][0]
                             best_beneficio = nuevo_beneficio
                             break  # Primer movimiento válido óptimo
 
