@@ -70,7 +70,7 @@ def main():
                 articulos=dataset,
                 capacidad_mochila=args.capacidad,
                 max_repeticiones=args.repeticiones,
-                verbose=args.verbose
+                mostrar_progreso=args.verbose
             )
         elif args.grasp:
             print("\nUsando el algoritmo GRASP")

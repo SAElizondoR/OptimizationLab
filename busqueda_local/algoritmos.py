@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 from collections import defaultdict
 import numpy as np
 
@@ -366,137 +366,205 @@ def resolver_problema_tabu(
         articulos: np.ndarray,
         capacidad_mochila: int,
         max_repeticiones: int = 100,
-        tabu_tenure: int = 10,
-        max_sin_mejora: int = 20,
-        verbose: bool = False
-) -> Dict[str, float | List[int] | int]:
+        duracion_tabu: int = 10,
+        max_rep_sin_mejora: int = 20,
+        mostrar_progreso: bool = False
+) -> Dict[str, Union[float, List[int], int]]:
+    """
+    Resolver el problema de la mochila usando búsqueda tabú.
 
-    # Precomputar datos esenciales
+    Args:
+        articulos: Vector estructurado con campos 'id', 'peso' y 'beneficio'.
+        capacidad_mochila: Capacidad máxima de carga de la mochila
+        max_repeticiones: Máximo número de repeticiones permitidas
+        duracion_tabu: Número de repeticiones que un movimiento permanece en la
+        lista tabú.
+        max_rep_sin_mejora: Criterio de parada por estancamiento.
+        mostrar_progreso: Si es verdadero, muestra el progreso durante la
+        ejecución.
+
+    Returns:
+        Diccionario con la solución óptima encontrada y métricas relevantes.
+    """
+
+    # 1. Preparación inicial de datos
+
+    # Extraer y convertir datos a tipos eficientes para operaciones numéricas
     pesos = articulos['peso'].astype(np.int32)
     beneficios = articulos['beneficio'].astype(np.int32)
-    ids = articulos['id']
+    ids_articulos = articulos['id']
 
-    # Generar solución inicial usando el enfoque voraz
-    sol_actual, peso_actual, beneficio_actual = generar_solucion_voraz(
-        articulos,
-        capacidad_mochila
-    )
-    mejor_sol = sol_actual.copy()
+    # Generar solución inicial usando algoritmo voraz
+    solucion_actual, peso_actual, beneficio_actual = generar_solucion_voraz(
+        articulos, capacidad_mochila)
+
+    # Asignar la solución inicial como mejor solución
+    mejor_solucion = solucion_actual.copy()
     mejor_peso = peso_actual
     mejor_beneficio = beneficio_actual
 
-    # Estructuras
-    lista_tabu = {}
-    contador_sin_mejora = 0
+    # 2. Configuración de estructuras para la búsqueda tabú
 
-    # Búsqueda principal vectorizada
-    for iteracion in range(1, max_repeticiones + 1):
-        if contador_sin_mejora >= max_sin_mejora:
+    lista_tabu = {} # Diccionario para registrar movimientos prohibidos
+    contador_sin_mejora = 0 # Repeticiones consecutivas sin mejoras
+
+    # 3. Ciclo principal de la búsqueda tabú
+
+    for repeticion_actual in range(1, max_repeticiones + 1):
+        # Criterio de interrupción temprana por estancamiento
+        if contador_sin_mejora >= max_rep_sin_mejora:
             break
 
-        best_mejora = -np.inf
-        best_move = None
-        best_peso = 0
-        best_beneficio = 0
+        # Variables para rastrear el mejor movimiento en la repetición actual
+        maxima_mejora = -np.inf
+        mejor_movimiento = None
+        mejor_peso_candidato = 0
+        mejor_beneficio_candidato = 0
 
-        # Movimientos de adición (vectorizado + incremental)
-        no_seleccionados = np.where(~sol_actual)[0]
-        if no_seleccionados.size:
-            # Cálculo vectorizado de pesos y máscara factible
-            nuevos_pesos = peso_actual + pesos[no_seleccionados]
-            mascara_factibles = nuevos_pesos <= capacidad_mochila
-            feasible_j = no_seleccionados[mascara_factibles]
+        # 3.1 Evaluación de movimientos de adición
 
-            # Ordenar por beneficio descendente y buscar el mejor movimiento permitido
-            if feasible_j.size:
-                # Usar argsort para ordenar sin conversión a lista
-                orden = np.argsort(-beneficios[feasible_j])
-                sorted_j = feasible_j[orden]
+        # Identificar artículos no seleccionados que podrían añadirse
+        indices_no_seleccionados = np.where(~solucion_actual)[0]
 
-                for j in sorted_j:
-                    move = ('add', j)
-                    mejora = beneficios[j]
-                    nuevo_beneficio = beneficio_actual + mejora
+        if indices_no_seleccionados.size:
+            # Calcular nuevos pesos potenciales de forma vectorizada
+            pesos_candidatos = peso_actual + pesos[indices_no_seleccionados]
 
-                    # Evaluar si el movimiento está permitido
-                    if (move not in lista_tabu or nuevo_beneficio > mejor_beneficio):
-                        if mejora > best_mejora:
-                            best_mejora = mejora
-                            best_move = move
-                            best_peso = nuevos_pesos[mascara_factibles][feasible_j == j][0]
-                            best_beneficio = nuevo_beneficio
-                            break  # Primer movimiento válido óptimo
+            # Crear máscar para movimientos factibles (que no excedan la
+            #  capacidad)
+            mascara_factibles = pesos_candidatos <= capacidad_mochila
+            indices_factibles = indices_no_seleccionados[mascara_factibles]
 
-        # Optimización para movimientos de intercambio
-        seleccionados = np.where(sol_actual)[0]
-        if seleccionados.size and no_seleccionados.size:
-            # Uso de broadcasting eficiente con tipos de datos reducidos
-            delta_pesos = pesos[no_seleccionados] - pesos[seleccionados[:, None]]
-            factibles = (peso_actual + delta_pesos) <= capacidad_mochila
+            if indices_factibles.size:
+                # Ordenar candidatos por beneficio descendente para evaluación
+                # ordenada
+                orden_descendente = np.argsort(-beneficios[indices_factibles])
+                candidatos_ordenados = indices_factibles[orden_descendente]
 
-            # Encontrar índices de intercambios factibles
-            i_idx, j_idx = np.where(factibles)
-            if i_idx.size > 0:
-                i = seleccionados[i_idx]
-                j = no_seleccionados[j_idx]
-                delta_ben = beneficios[j] - beneficios[i]
+                # Evaluar cada movimiento de adición por orden de beneficio
+                for indice_articulo in candidatos_ordenados:
+                    tipo_movimiento = ('añadir', indice_articulo)
+                    mejora_potencial = beneficios[indice_articulo]
+                    beneficio_candidato = beneficio_actual + mejora_potencial
 
-                # Procesar en orden descendente usando argpartition para eficiencia
-                if delta_ben.size > 0:
-                    max_idx = np.argmax(delta_ben)
-                    current_i = i[max_idx]
-                    current_j = j[max_idx]
-                    move = ('swap', current_i, current_j)
-                    mejora = delta_ben[max_idx]
-                    nuevo_beneficio = beneficio_actual + mejora
+                    # Verificar si el movimiento está permitido (reglas tabú y
+                    # de aspiración)
+                    movimiento_permitido = (
+                        tipo_movimiento not in lista_tabu or
+                        beneficio_candidato > mejor_beneficio
+                    )
+                    if (movimiento_permitido and
+                        mejora_potencial > maxima_mejora):
+                        maxima_mejora = mejora_potencial
+                        mejor_movimiento = tipo_movimiento
+                        mejor_peso_candidato = pesos_candidatos[
+                            mascara_factibles
+                        ][indices_factibles == indice_articulo][0]
+                        mejor_beneficio_candidato = beneficio_candidato
+                        break  # Usar el primer mejor movimiento encontrado
 
-                    if (move not in lista_tabu or nuevo_beneficio > mejor_beneficio):
-                        if mejora > best_mejora:
-                            best_mejora = mejora
-                            best_move = move
-                            best_peso = peso_actual + (pesos[current_j] - pesos[current_i])
-                            best_beneficio = nuevo_beneficio
+        # 3.2 Evaluación de movimientos de intercambio
 
-        # Aplicar mejor movimiento encontrado
-        if best_move:
-            # Actualizar solución
-            if best_move[0] == 'add':
-                sol_actual[best_move[1]] = True
+        indices_seleccionados = np.where(solucion_actual)[0]
+        if indices_seleccionados.size and indices_no_seleccionados.size:
+            # Calcular diferencias de peso para todos los posibles intercambios
+            # usando difusión
+            delta_pesos = (pesos[indices_no_seleccionados] -
+                pesos[indices_seleccionados[:, None]])
+            intercambios_factibles = ((peso_actual + delta_pesos) <=
+                capacidad_mochila)
+
+            # Obtener índices de todos los intercambios posibles que sean
+            # factibles
+            filas, columnas = np.where(intercambios_factibles)
+
+            if filas.size > 0:
+                # Calcular beneficios netos para cada intercambio factible
+                articulos_salida = indices_seleccionados[filas]
+                articulos_entrada = indices_no_seleccionados[columnas]
+                delta_beneficios = (beneficios[articulos_entrada] -
+                    beneficios[articulos_salida])
+
+                # Encontrar el intercambio con máxima mejora
+                indice_maximo = np.argmax(delta_beneficios)
+                articulo_remover = articulos_salida[indice_maximo]
+                articulo_agregar = articulos_entrada[indice_maximo]
+                tipo_movimiento = ('intercambiar',
+                    articulo_remover, articulo_agregar)
+                mejora_potencial = delta_beneficios[indice_maximo]
+                beneficio_candidato = beneficio_actual + mejora_potencial
+
+                # Verificar restricciones tabú
+                movimiento_permitido = (
+                    tipo_movimiento not in lista_tabu or
+                    beneficio_candidato > mejor_beneficio
+                )
+
+                if movimiento_permitido and mejora_potencial > maxima_mejora:
+                    maxima_mejora = mejora_potencial
+                    mejor_movimiento = tipo_movimiento
+                    mejor_peso_candidato = peso_actual + (
+                        pesos[articulo_agregar] - pesos[articulo_remover])
+                    mejor_beneficio_candidato = beneficio_candidato
+
+        # 4. Aplicar el mejor movimiento encontrado
+
+        if mejor_movimiento:
+            # Actualizar la solución actual según el tipo de movimiento
+            if mejor_movimiento[0] == 'añadir':
+                solucion_actual[mejor_movimiento[1]] = True
             else:
-                sol_actual[best_move[1]] = False
-                sol_actual[best_move[2]] = True
+                # Para intercambios quitar un artículo y añadir otro
+                solucion_actual[mejor_movimiento[1]] = False
+                solucion_actual[mejor_movimiento[2]] = True
 
-            # Actualización de métricas
-            peso_actual = best_peso
-            beneficio_actual = best_beneficio
+            # Actualizar métricas de la solución actual
+            peso_actual = mejor_peso_candidato
+            beneficio_actual = mejor_beneficio_candidato
 
+            # Actualizar mejor solución global si hay mejora
             if beneficio_actual > mejor_beneficio:
-                mejor_sol[:] = sol_actual  # Actualización in-place
+                mejor_solucion[:] = solucion_actual
                 mejor_peso = peso_actual
                 mejor_beneficio = beneficio_actual
-                contador_sin_mejora = 0
+                contador_sin_mejora = 0  # Reiniciar contador de estancamiento
             else:
                 contador_sin_mejora += 1
 
-            # Actualizar lista tabú
-            lista_tabu[best_move] = iteracion + tabu_tenure
-            if best_move[0] == 'swap':
-                lista_tabu[('swap', best_move[2], best_move[1])] = iteracion + tabu_tenure
+            # Registrar movimiento en lista tabú
+            lista_tabu[mejor_movimiento] = repeticion_actual + duracion_tabu
 
-        # Limpieza eficiente de lista tabú
-        lista_tabu = defaultdict(int, {k: v for k, v in lista_tabu.items() if v > iteracion})
+            # Para intercambios, registrar también el movimiento inverso
+            if mejor_movimiento[0] == 'intercambiar':
+                movimiento_inverso = ('intercambiar',
+                    mejor_movimiento[2], mejor_movimiento[1])
+                lista_tabu[movimiento_inverso] = (repeticion_actual +
+                    duracion_tabu)
 
-        if verbose:
-            print(f"Iteración {iteracion}: Beneficio {mejor_beneficio}")
+        # 5. Mantenimiento de la lista tabú
 
-    # Cálculo final optimizado
-    articulos_seleccionados = np.sort(ids[mejor_sol]).tolist()
-    mejora_total = mejor_beneficio - (sol_actual @ beneficios)
+        # Eliminar entradas caducadas de la lista tabú
+        lista_tabu = {movimiento: expiracion
+            for movimiento, expiracion in lista_tabu.items()
+            if expiracion > repeticion_actual}
+
+        # Mostrar progreso (opcional)
+        if mostrar_progreso:
+            print(f"Iteración {repeticion_actual}: " +
+                f"Beneficio actual {mejor_beneficio}")
+
+    # 6. Preparación de resultados finales
+
+    # Obtener los identificadores ordenados de los artículos seleccionados
+    articulos_seleccionados = np.sort(ids_articulos[mejor_solucion]).tolist()
+
+    # Calcular mejora total respecto a la solución inicial
+    mejora_total = mejor_beneficio - (solucion_actual @ beneficios)
 
     return {
         'articulos_seleccionados': articulos_seleccionados,
         'peso_total': mejor_peso,
         'beneficio_total': mejor_beneficio,
-        'iteraciones_realizadas': iteracion,
+        'iteraciones_realizadas': repeticion_actual,
         'mejora_obtenida': mejora_total
     }
