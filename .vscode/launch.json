@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "--archivo", "/home/andres/Documentos/univ/maestria/4to/OptimizationLab/busqueda_local/data/datos_dificil.csv",
+                "--archivo", "C:\\Users\\seelro06\\OneDrive - Arca Continental S.A.B. de C.V\\Documentos\\uni\\OptimizationLab\\busqueda_local\\data\\datos_dificil.csv",
                 "--capacidad", "1000000",
                 "--repeticiones", "5",
                 "--tabu",
@@ -25,7 +25,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "--archivo", "/home/andres/Documentos/univ/maestria/4to/OptimizationLab/busqueda_local/data/datos_dificil.csv",
+                "--archivo", "C:\\Users\\seelro06\\OneDrive - Arca Continental S.A.B. de C.V\\Documentos\\uni\\OptimizationLab\\busqueda_local\\data\\datos_dificil.csv",
                 "--capacidad", "1000000",
                 "--repeticiones", "100",
                 "--alpha", "0.3",
@@ -40,7 +40,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "--archivo", "/home/andres/Documentos/univ/maestria/4to/OptimizationLab/busqueda_local/data/datos_dificil.csv",
+                "--archivo", "C:\\Users\\seelro06\\OneDrive - Arca Continental S.A.B. de C.V\\Documentos\\uni\\OptimizationLab\\busqueda_local\\data\\datos_dificil.csv",
                 "--capacidad", "1000000",
                 "--repeticiones", "500",
                 "--verbose"
