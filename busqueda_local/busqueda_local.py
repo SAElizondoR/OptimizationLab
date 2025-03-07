@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 from algoritmos import (resolver_problema_voraz, resolver_problema_grasp,
                         resolver_problema_tabu)
+from busqueda_dispersa import resolver_problema_scatter
 
 def cargar_datos(ruta_archivo):
     """Cargar los datos del problema desde un archivo CSV.
@@ -43,6 +44,8 @@ def main():
                         help='Usar algoritmo GRASP en lugar de voraz + búsqueda local')
     parser.add_argument('-t', '--tabu', action='store_true',
                         help='Usar algoritmo de búsqueda tabú')
+    parser.add_argument('-s', '--scatter', action='store_true',
+                        help='Usar algoritmo de búsqueda dispersa (Scatter Search)')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Mostrar detalles durante la ejecución')
 
@@ -71,6 +74,14 @@ def main():
                 capacidad_mochila=args.capacidad,
                 max_repeticiones=args.repeticiones,
                 mostrar_progreso=args.verbose
+            )
+        elif args.scatter:
+            print("\nUsando algoritmo de Búsqueda Dispersa")
+            solucion = resolver_problema_scatter(
+                articulos=dataset,
+                capacidad_mochila=args.capacidad,
+                max_repeticiones=args.repeticiones,
+                verbose=args.verbose
             )
         elif args.grasp:
             print("\nUsando el algoritmo GRASP")

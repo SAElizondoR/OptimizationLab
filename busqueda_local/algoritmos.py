@@ -1,5 +1,4 @@
 from typing import Dict, List, Tuple, Union
-from collections import defaultdict
 import numpy as np
 
 def generar_solucion_voraz(
